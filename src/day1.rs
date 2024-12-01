@@ -32,10 +32,10 @@ type IdentityBuildHasher = BuildHasherDefault<IdentityHasher>;
 #[inline(always)]
 fn dumb_parse(bytes: &[u8]) -> u32 {
     (bytes[0] - b'0') as u32 * 10_000
-        + (bytes[1] - b'0') as u32 * 1_000
-        + (bytes[2] - b'0') as u32 * 100
-        + (bytes[3] - b'0') as u32 * 10
-        + (bytes[4] - b'0') as u32
+        + (bytes[1] & 0x0f) as u32 * 1_000
+        + (bytes[2] & 0x0f) as u32 * 100
+        + (bytes[3] & 0x0f) as u32 * 10
+        + (bytes[4] & 0x0f) as u32
 }
 
 #[aoc(day1, part1)]
@@ -66,12 +66,12 @@ pub fn part2(input: &str) -> u32 {
         .chunks(14)
         .map(|l| {
             let second = dumb_parse(&l[8..13]);
-            *counts.entry(second).or_default() += 1;
+            counts.entry(second).and_modify(|v| *v += 1).or_insert(1);
             dumb_parse(&l[0..5])
         })
         .collect();
 
     vec.into_iter()
-        .map(|i| i * counts.get(&i).copied().unwrap_or(0))
+        .map(|i| counts.get(&i).map_or(0, |&v| v * i))
         .sum()
 }
