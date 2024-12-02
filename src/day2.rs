@@ -1,69 +1,60 @@
-fn check_vec(vec: Vec<i32>) -> bool {
+fn check_vec(vec: &Vec<i32>) -> bool {
     vec.windows(2)
         .map(|window| window[1] - window[0])
         .collect::<Vec<i32>>()
         .windows(2)
-        .map(|window| {
+        .all(|window| {
             let abs0 = window[0].abs();
             let abs1 = window[1].abs();
-            if abs0 > 3 || abs1 > 3 || abs0 < 1 || abs1 < 1 {
-                false
-            } else {
-                if window[0].signum() != window[1].signum() {
-                    false
-                } else {
-                    true
-                }
-            }
+            abs0 >= 1
+                && abs0 <= 3
+                && abs1 >= 1
+                && abs1 <= 3
+                && window[0].signum() == window[1].signum()
         })
-        .all(|b| b == true)
 }
 
 #[aoc(day2, part1)]
 pub fn part1(input: &str) -> u32 {
-    let mut result = 0;
-
-    input.lines().for_each(|l| {
-        check_vec(
-            l.split_whitespace()
+    input
+        .lines()
+        .filter(|line| {
+            let vec = line
+                .split_whitespace()
                 .map(|e| e.parse().unwrap())
-                .collect::<Vec<i32>>(),
-        )
-        .then(|| result += 1);
-    });
-
-    result
+                .collect::<Vec<i32>>();
+            check_vec(&vec)
+        })
+        .count() as u32
 }
 
-fn generate_removals(vec: Vec<i32>) -> Vec<Vec<i32>> {
-    std::iter::once(vec.clone())
-        .chain((0..vec.len()).map(|i| {
+fn generate_removals(vec: &Vec<i32>) -> Vec<Vec<i32>> {
+    (0..vec.len())
+        .map(|i| {
             vec.iter()
                 .enumerate()
                 .filter(|&(index, _)| index != i)
                 .map(|(_, &value)| value)
                 .collect()
-        }))
+        })
         .collect()
 }
 
 #[aoc(day2, part2)]
 pub fn part2(input: &str) -> u32 {
-    let mut result = 0;
-
-    input.lines().for_each(|l| {
-        generate_removals(
-            l.split_whitespace()
-                .map(|e| e.parse().unwrap())
-                .collect::<Vec<i32>>(),
-        )
-        .into_iter()
-        .map(check_vec)
-        .any(|b| b == true)
-        .then(|| result += 1);
-    });
-
-    result
+    input
+        .lines()
+        .filter(|line| {
+            let vec = line
+                .split_whitespace()
+                .map(|e| e.parse::<i32>().unwrap())
+                .collect::<Vec<i32>>();
+            check_vec(&vec)
+                || generate_removals(&vec)
+                    .into_iter()
+                    .any(|vec: Vec<i32>| check_vec(&vec))
+        })
+        .count() as u32
 }
 
 #[cfg(test)]
