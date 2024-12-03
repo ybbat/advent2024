@@ -19,26 +19,36 @@ impl VecValidation for [i16] {
     }
 }
 
-fn faster_parse(s: &str) -> i16 {
-    let mut num = 0;
-    for c in s.as_bytes() {
-        num = num * 10 + (c - b'0') as i16;
+fn parse_num(bytes: &[u8], i: usize) -> Option<(i16, usize)> {
+    if bytes[i].is_ascii_digit() {
+        if bytes[i..].len() > 1 && bytes[i + 1].is_ascii_digit() {
+            return Some((
+                (bytes[i + 1] - b'0') as i16 + (bytes[i] - b'0') as i16 * 10,
+                i + 3,
+            ));
+        } else {
+            return Some(((bytes[i] - b'0') as i16, i + 2));
+        }
+    } else {
+        return None;
     }
-    num
 }
 
 fn parse_line_to_array(line: &str) -> ([i16; 8], usize) {
+    let bytes = line.as_bytes();
+    let mut i = 0;
     let mut arr = [0; 8];
     let mut count = 0;
-
-    for (i, num_str) in line.split_whitespace().enumerate() {
-        if i >= 8 {
-            break;
+    while i < bytes.len() {
+        match parse_num(bytes, i) {
+            Some((x, new_i)) => {
+                arr[count] = x;
+                count += 1;
+                i = new_i;
+            }
+            None => i += 1,
         }
-        arr[i] = faster_parse(num_str);
-        count += 1;
     }
-
     (arr, count)
 }
 
